@@ -1,0 +1,12 @@
+
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.10.6
+langchain==0.3.27
+langchain-google-genai==2.1.8
+langchain-community==0.3.27
+langchain-core==0.3.72
+youtube-transcript-api==1.2.1
+python-dotenv==1.0.0
+chromadb==1.0.15
+langchain-chroma==0.2.5
