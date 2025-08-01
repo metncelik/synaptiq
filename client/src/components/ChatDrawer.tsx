@@ -1,4 +1,4 @@
-import { X, MessageCircle, HelpCircle, Search, ChevronLeft, ChevronRight, Loader2, Send } from 'lucide-react'
+import { X, MessageCircle, HelpCircle, Search, ChevronLeft, ChevronRight, Loader2, ArrowUp, ArrowUpAZIcon, SendHorizonal, Send } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import React from 'react'
 import ReactMarkdown from 'react-markdown'
@@ -7,6 +7,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip'
 import { useAddMessage, useCreateChat, useGetChat } from '@/service/queries'
 import { Button } from './ui/button'
 import type { Message } from '@/service/types'
+import { Textarea } from './ui/textarea'
 
 type TreeNode = {
     id: string
@@ -34,6 +35,7 @@ export function ChatDrawer({ selectedNodeId, onClose, allNodes, sessionId }: Cha
     const [isExpanded, setIsExpanded] = useState(false)
     const [message, setMessage] = useState('')
     const messagesEndRef = useRef<HTMLDivElement>(null)
+    const messageInputRef = useRef<HTMLTextAreaElement>(null)
     const { data: chat } = useGetChat(sessionId, selectedNodeId ?? '', chatType)
     const { mutate: createChat, isPending: isCreatingChat } = useCreateChat()
     const { mutate: addMessage, isPending: isAddingMessage } = useAddMessage()
@@ -42,7 +44,9 @@ export function ChatDrawer({ selectedNodeId, onClose, allNodes, sessionId }: Cha
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, [chat?.messages])
+        messageInputRef.current?.focus()
+        setMessage('')
+    }, [chat?.messages, selectedNodeId])
 
     const chatTypes: {
         key: ChatType;
@@ -75,15 +79,23 @@ export function ChatDrawer({ selectedNodeId, onClose, allNodes, sessionId }: Cha
     const handleSend = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         if (chat && message && selectedNodeId) {
-            addMessage({ 
-                chatId: chat.id.toString(), 
+            const newMessage = {
+                id: chat.messages.length + 1,
+                chat_id: chat.id,
+                role: 'user' as const,
+                content: message,
+                created_at: new Date().toISOString()
+            }
+            chat.messages.push(newMessage)
+            addMessage({
+                chatId: chat.id.toString(),
                 content: message,
                 sessionId,
                 nodeId: selectedNodeId,
                 chatType
             })
             setMessage('')
-            // Scroll to bottom immediately after sending
+
             setTimeout(() => {
                 messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
             }, 100)
@@ -151,17 +163,16 @@ export function ChatDrawer({ selectedNodeId, onClose, allNodes, sessionId }: Cha
                                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                             >
                                 <div
-                                    className={`${isExpanded ? 'max-w-[60%]' : 'max-w-full'} p-3 rounded-lg ${
-                                        message.role === 'user'
-                                            ? 'bg-blue-500 text-white'
-                                            : 'bg-gray-100 text-gray-900'
-                                    }`}
+                                    className={`${isExpanded ? 'max-w-[60%]' : 'max-w-full'} p-3 rounded-lg ${message.role === 'user'
+                                        ? 'bg-gray-100 text-gray-900'
+                                        : ''
+                                        }`}
                                 >
                                     {message.role === 'user' ? (
                                         <p className="text-sm">{message.content}</p>
                                     ) : (
                                         <div className="text-sm markdown-content">
-                                            <ReactMarkdown 
+                                            <ReactMarkdown
                                                 remarkPlugins={[remarkGfm]}
                                                 components={{
                                                     // Headings
@@ -210,10 +221,10 @@ export function ChatDrawer({ selectedNodeId, onClose, allNodes, sessionId }: Cha
                                                     ),
                                                     // Links
                                                     a: ({ children, href }) => (
-                                                        <a 
-                                                            href={href} 
+                                                        <a
+                                                            href={href}
                                                             className="text-blue-600 underline hover:text-blue-800"
-                                                            target="_blank" 
+                                                            target="_blank"
                                                             rel="noopener noreferrer"
                                                         >
                                                             {children}
@@ -238,17 +249,23 @@ export function ChatDrawer({ selectedNodeId, onClose, allNodes, sessionId }: Cha
                     </div>
 
                     {/* Message Input */}
-                    <div className="p-4 border-t border-gray-200">
+                    <div className="p-4 m-4 rounded-lg border border-gray-200 bg-gray-50">
                         <form className="flex gap-2 items-center" onSubmit={handleSend}>
-                            <input
-                                type="text"
+                            <Textarea
+                                ref={messageInputRef}
                                 placeholder="Type your message..."
-                                className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="shadow-none focus-visible:ring-0 border-none flex-1 p-2 max-h-20 resize-none text-gray-900"
                                 value={message}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault()
+                                        messageInputRef.current?.form?.requestSubmit()
+                                    }
+                                }}
                                 onChange={(e) => setMessage(e.target.value)}
                             />
-                            <Button size="sm" type="submit" disabled={isAddingMessage}>
-                                {isAddingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                            <Button variant="ghost" color='black' size="sm" type="submit" disabled={isAddingMessage}>
+                                {isAddingMessage ? <Loader2 className="h-6 w-6 animate-spin" /> : <SendHorizonal className="h-6 w-6" />}
                             </Button>
                         </form>
                     </div>

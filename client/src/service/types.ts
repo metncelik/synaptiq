@@ -32,9 +32,6 @@ export type Mindmap = {
 export type Message = {
   id: number
   chat_id: number
-  node_id: string
-  session_id: string
-  chat_type: string
   role: 'user' | 'assistant'
   content: string
   created_at: string
