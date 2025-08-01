@@ -5,8 +5,10 @@ export const SourceType = {
 export type SourceType = typeof SourceType[keyof typeof SourceType]
 
 export type Source = {
-  url: string
+  id: number
+  title: string
   type: SourceType
+  created_at: string
 }
 
 export type Session = {
@@ -50,6 +52,6 @@ export type FullSession = {
   id: number
   title: string
   created_at: string
-  sources?: Source[]
+  sources: Source[]
   mindmap: Mindmap
 }

@@ -1,9 +1,10 @@
 import { useParams } from 'react-router'
 import { useGetSession } from '@/service/queries'
-import { Calendar, FileText } from 'lucide-react'
+import { FileText, Youtube } from 'lucide-react'
 import { useState, useRef, useCallback } from 'react'
-import type { MindmapNode, Mindmap } from '@/service/types'
+import { type MindmapNode, type Mindmap, SourceType } from '@/service/types'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+import { Badge } from '@/components/ui/badge'
 import { ChatDrawer } from './ChatDrawer'
 
 // Tree node with position information
@@ -535,11 +536,13 @@ export function SessionView() {
                         {session.title}
                     </h1>
 
-                    <div className="flex items-center gap-6 text-sm text-gray-600">
-                        <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4" />
-                            <span>Created {formatDate(session.created_at)}</span>
-                        </div>
+                    <div className="flex flex-wrap gap-2 text-sm text-gray-600">
+                        {session.sources.map((source) => (
+                            <Badge key={source.id} className="flex items-center gap-2 bg-gray-100 text-gray-900 px-2 py-1">
+                                {source.type === SourceType.YOUTUBE && <Youtube className="h-4 w-4" />}
+                                <span>{source.title}</span>
+                            </Badge>
+                        ))}
                     </div>
                 </div>
             </div>
