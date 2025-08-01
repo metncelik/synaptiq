@@ -18,10 +18,16 @@ class VectoreStoreClient:
         ids = self.vectorstore.add_documents(documents)
         return ids
         
-    def get_all_chat_documents(self, chat_id):
-        all_docs = self.vectorstore.get(where={"chat_id": chat_id})
+    def get_all_session_documents(self, session_id):
+        all_docs = self.vectorstore.get(where={"session_id": int(session_id)})
         return all_docs["documents"]
+    
+    def get_source_documents(self, source_id):
+        docs = self.vectorstore.get(where={"source_id": int(source_id)})
+        return docs["documents"]
 
     def query(self, query, k=4, filter=None):
         docs =  self.vectorstore.similarity_search(query, k=k, filter=filter)
         return docs
+    
+vectorstore_client = VectoreStoreClient()
