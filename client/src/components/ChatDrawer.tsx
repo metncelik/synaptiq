@@ -157,11 +157,12 @@ export function ChatDrawer({ selectedNodeId, onClose, allNodes, sessionId }: Cha
             {chat ?
                 <div className="flex flex-col flex-1 min-h-0">
                     <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
-                        {chat.messages.map((message: Message) => (
+                        {chat.messages.map((message: Message, index: number) => (
                             <div
                                 key={message.id}
                                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                             >
+                                {index === chat.messages.length - 1 && <div ref={messagesEndRef} />}
                                 <div
                                     className={`${isExpanded ? 'max-w-[60%]' : 'max-w-full'} p-3 rounded-lg ${message.role === 'user'
                                         ? 'bg-gray-100 text-gray-900'
@@ -245,7 +246,7 @@ export function ChatDrawer({ selectedNodeId, onClose, allNodes, sessionId }: Cha
                                 </div>
                             </div>
                         ))}
-                        <div ref={messagesEndRef} />
+                        {isAddingMessage && <Loader2 className="m-auto h-6 w-6 animate-spin" />}
                     </div>
 
                     {/* Message Input */}
@@ -265,7 +266,7 @@ export function ChatDrawer({ selectedNodeId, onClose, allNodes, sessionId }: Cha
                                 onChange={(e) => setMessage(e.target.value)}
                             />
                             <Button variant="ghost" color='black' size="sm" type="submit" disabled={isAddingMessage}>
-                                {isAddingMessage ? <Loader2 className="h-6 w-6 animate-spin" /> : <SendHorizonal className="h-6 w-6" />}
+                                <SendHorizonal className="h-6 w-6" />
                             </Button>
                         </form>
                     </div>

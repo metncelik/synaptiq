@@ -21,12 +21,12 @@ class MessageService:
         history = self.get_messages(chat_id, desc = False)
         print("history:", history)
         response = self.generate_response(
-            chat["session_id"], chat["node_id"], chat["type"], content, history)
+            chat["session_id"], chat["node_id"], chat["type"], content, history, web_search=chat["type"] == "deepdive")
         self.add_message(chat_id, "user", content)
         self.add_message(chat_id, "assistant", response)
         return response
 
-    def generate_response(self, session_id, node_id, chat_type, content, history = None):
+    def generate_response(self, session_id, node_id, chat_type, content, history = None, web_search=False):
         mindmap = self.db_client.get_mindmap(session_id)
         mindmap_json = parse_json(mindmap["mindmap_json"]) if mindmap else None
         node_title, node_desc = get_node_title_desc(mindmap_json, node_id)
@@ -35,11 +35,11 @@ class MessageService:
         docs_str = "\n".join([doc.page_content for doc in docs])
 
         response = self._invoke_llm(
-            content, chat_type, node_title, mindmap_json, docs_str, history)
+            content, chat_type, node_title, mindmap_json, docs_str, history, web_search)
 
         return response
 
-    def _invoke_llm(self, new_message, chat_type, topic, mindmap, docs_str, history):
+    def _invoke_llm(self, new_message, chat_type, topic, mindmap, docs_str, history, web_search):
         if chat_type == "quiz":
             system_prompt = """
                  You are a helpful assistant that can generate a questions and evaluate user responses about the {topic} in this mindmap: {mindmap}. Do not generate unrelated questions just stay in the topic ({topic}). Here is the related information you need: {docs_str}
@@ -58,7 +58,7 @@ class MessageService:
 
         else:
             raise HTTPException(status_code=400, detail="Invalid chat type")
-        
+
         prompt_template = ChatPromptTemplate.from_messages([
                ("system", system_prompt),
                
@@ -72,6 +72,20 @@ class MessageService:
         
         prompt = prompt_template.invoke(
             {"docs_str": docs_str, "topic": topic, "mindmap": mindmap})
+        
+        # TODO: check if max tokens is reached
+        
+        def web_search(query: str) -> str:
+            return "Web search tool is not implemented yet"
+        
+        if web_search:
+            self.llm.bind_tools([
+                Tool(
+                    name="web_search",
+                    description="Search the web for information",
+                    func=web_search
+                )
+            ])
         
         print("prompt:", prompt)
         response = self.llm.invoke(prompt)

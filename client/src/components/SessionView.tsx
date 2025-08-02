@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router'
 import { useGetSession } from '@/service/queries'
-import { ExternalLink, FileText, Globe, Youtube } from 'lucide-react'
+import { ExternalLink, FileText, Globe, RefreshCcwIcon, Youtube, ZoomInIcon, ZoomOutIcon } from 'lucide-react'
 import { useState, useRef, useCallback } from 'react'
 import { type MindmapNode, type Mindmap, SourceType } from '@/service/types'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
@@ -220,18 +220,20 @@ function TreeMindmap({ mindmap, sessionId }: { mindmap: Mindmap, sessionId: stri
     // Overlay hover state to toggle structure visibility
     const [isStructureHovered, setIsStructureHovered] = useState(false)
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
+    const [isAnimating, setIsAnimating] = useState(false)
 
     const handleNodeClick = (nodeId: string) => {
-        // Only zoom out if chat drawer is not already open
-        if (!selectedNodeId) {
-            setZoom(prev => Math.max(0.5, prev * 0.7))
+        // Find the clicked node and center/zoom in on it
+        const clickedNode = allNodes.find(node => node.id === nodeId)
+        if (clickedNode) {
+            centerOnNode(clickedNode)
         }
         setSelectedNodeId(nodeId)
     }
 
     const handleCloseChat = () => {
         setSelectedNodeId(null)
-        setZoom(prev => Math.min(3, prev / 0.7))
+        // Keep the current zoom level when closing chat
     }
 
     // Calculate tree layout
@@ -327,52 +329,75 @@ function TreeMindmap({ mindmap, sessionId }: { mindmap: Mindmap, sessionId: stri
         setZoom(newZoom)
     }, [zoom, viewBoxX, viewBoxY, viewBoxWidth, viewBoxHeight, bounds])
 
-    const centerOnRoot = useCallback(() => {
-        // Center the view on the root node
-        const rootCenterX = rootNode.x + rootNode.width / 2
-        const rootCenterY = rootNode.y + rootNode.height / 2
-
-        setPan({
-            x: bounds.minX - padding + viewBoxWidth / 2 - rootCenterX,
-            y: bounds.minY - padding + viewBoxHeight / 2 - rootCenterY
-        })
-    }, [rootNode, bounds, padding, viewBoxWidth, viewBoxHeight])
-
     const resetZoom = useCallback(() => {
         setZoom(1)
         setPan({ x: 0, y: 0 })
     }, [])
 
     const zoomIn = useCallback(() => {
-        setZoom(prev => Math.min(3, prev + 0.2))
-    }, [])
+        if (zoom < 2) {
+            setZoom(prev => Math.min(3, prev + 0.1))
+        }
+    }, [zoom])
 
     const zoomOut = useCallback(() => {
-        setZoom(prev => Math.max(0.1, prev - 0.2))
-    }, [])
+        if (zoom > 0.7) {
+            setZoom(prev => Math.max(0.1, prev - 0.2))
+        }
+    }, [zoom])
 
-    // Center the view on an arbitrary node
+    // Center the view on an arbitrary node with smooth animation
     const centerOnNode = useCallback(
         (targetNode: TreeNode) => {
-            const newZoom = Math.min(3, zoom * 2)
+            if (isAnimating) return // Prevent multiple animations
+            
+            const targetZoom = 1.6
+            const animationDuration = 500 // ms
+            const startTime = Date.now()
+            const startZoom = zoom
+            const startPan = { ...pan }
 
-            // Compute the viewBox dimensions that will be used after zooming
-            const newViewBoxWidth = (bounds.maxX - bounds.minX + padding * 2) / newZoom
-            const newViewBoxHeight = (bounds.maxY - bounds.minY + padding * 2) / newZoom
+            // Compute the target pan position
+            const newViewBoxWidth = (bounds.maxX - bounds.minX - padding * 2) / targetZoom
+            const newViewBoxHeight = (bounds.maxY - bounds.minY + padding * 2) / targetZoom
 
             const nodeCenterX = targetNode.x + targetNode.width / 2
             const nodeCenterY = targetNode.y + targetNode.height / 2
 
-            // Update pan so that the chosen node is centered
-            setPan({
+            const targetPan = {
                 x: bounds.minX - padding + newViewBoxWidth / 2 - nodeCenterX,
                 y: bounds.minY - padding + newViewBoxHeight / 2 - nodeCenterY,
-            })
+            }
 
-            // Finally set the new zoom level
-            setZoom(newZoom)
+            setIsAnimating(true)
+
+            const animate = () => {
+                const elapsed = Date.now() - startTime
+                const progress = Math.min(elapsed / animationDuration, 1)
+                
+                // Easing function for smooth animation (ease-out)
+                const easedProgress = 1 - Math.pow(1 - progress, 3)
+
+                // Interpolate zoom and pan values
+                const currentZoom = startZoom + (targetZoom - startZoom) * easedProgress
+                const currentPan = {
+                    x: startPan.x + (targetPan.x - startPan.x) * easedProgress,
+                    y: startPan.y + (targetPan.y - startPan.y) * easedProgress,
+                }
+
+                setZoom(currentZoom)
+                setPan(currentPan)
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate)
+                } else {
+                    setIsAnimating(false)
+                }
+            }
+
+            requestAnimationFrame(animate)
         },
-        [zoom, bounds, padding]
+        [bounds, padding, zoom, pan, isAnimating]
     )
 
     const renderNodeList = (node: TreeNode, depth = 0): React.ReactElement[] => {
@@ -419,7 +444,7 @@ function TreeMindmap({ mindmap, sessionId }: { mindmap: Mindmap, sessionId: stri
                     className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-700 font-bold"
                     title="Zoom In"
                 >
-                    +
+                    <ZoomInIcon className="h-4 w-4" />
                 </button>
                 <div className="text-xs text-center text-gray-600 py-1">
                     {Math.round(zoom * 100)}%
@@ -429,22 +454,15 @@ function TreeMindmap({ mindmap, sessionId }: { mindmap: Mindmap, sessionId: stri
                     className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-700 font-bold"
                     title="Zoom Out"
                 >
-                    −
+                    <ZoomOutIcon className="h-4 w-4" />
                 </button>
                 <hr className="border-gray-300 my-1" />
-                <button
-                    onClick={centerOnRoot}
-                    className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-700 text-xs"
-                    title="Center on Root"
-                >
-                    ⌂
-                </button>
                 <button
                     onClick={resetZoom}
                     className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-700 text-xs"
                     title="Reset Zoom"
                 >
-                    ⚏
+                    <RefreshCcwIcon className="h-4 w-4" />
                 </button>
             </div>
 
@@ -528,7 +546,9 @@ export function SessionView() {
                         {session.sources.map((source) => (
                             <Link
                                 key={source.id}
-                                to={source.url}
+                                to={
+                                    source.type === SourceType.PDF ? `${import.meta.env.VITE_API_URL}${source.url}` : source.url
+                                }
                                 target="_blank"
                                 className="flex items-center gap-2 bg-gray-100 text-gray-900 px-2 py-1"
                             >
