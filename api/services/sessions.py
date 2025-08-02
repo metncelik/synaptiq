@@ -2,7 +2,7 @@ from database.client import db_client
 from langchain_google_genai import GoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from fastapi import HTTPException
-from utils import validate_and_parse_mindmap, parse_json
+from utils import validate_and_parse_mindmap, parse_json, get_yt_video_id
 from services.docs import docs_service
 from services.sources import source_service
 
@@ -17,10 +17,11 @@ class SessionService:
         sessions = self.db_client.get_sessions()
         return sessions
     
-    def create_new_session(self, video_id):
+    def create_new_session(self, sources):
         try:
             session_id = self.db_client.insert_session()
-            self.source_service.add_youtube_source(video_id, session_id)
+            for source in sources:
+                self.source_service.add_source(source, session_id)
             mindmap_title, mindmap_str = self._generate_mindmap(session_id)
             if mindmap_title and mindmap_str:
                 self.db_client.update_session_title(session_id, mindmap_title)
@@ -40,12 +41,17 @@ class SessionService:
         print("session",session)
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
+        
         mindmap = self.db_client.get_mindmap(session_id)
         mindmap_json = parse_json(mindmap["mindmap_json"]) if mindmap else None
+        
+        sources = self.source_service.get_sources(session_id)
+        
         return {
             "session": {
                 **session,
-                "mindmap": mindmap_json
+                "mindmap": mindmap_json,
+                "sources": sources
             }
         }
 

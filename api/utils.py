@@ -41,8 +41,7 @@ def get_yt_video_id(url):
     else:
         raise ValueError("Invalid YouTube URL")
 
-def get_yt_title(video_id):
-    url = f"https://www.youtube.com/watch?v={video_id}"
+def get_yt_title(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.text, "html.parser")
     title = soup.find("title").text

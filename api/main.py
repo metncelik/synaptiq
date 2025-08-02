@@ -13,6 +13,7 @@ from routes.chats import router as chats_router
 from routes.sessions import router as sessions_router
 from routes.docs import router as docs_router
 from routes.messages import router as messages_router
+from routes.files import router as files_router
 
 app = FastAPI(
     title="LearnLoop",
@@ -75,6 +76,7 @@ app.include_router(sessions_router)
 app.include_router(docs_router)
 app.include_router(chats_router)
 app.include_router(messages_router)
+app.include_router(files_router)
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,19 +1,19 @@
 from fastapi import APIRouter
 from services.sessions import session_service
-from services.chats import chat_service
-from services.messages import message_service
 from pydantic import BaseModel
 from enum import Enum
-from utils import get_yt_video_id
 
 router = APIRouter(prefix = "/sessions", tags = ["sessions"])
 
 class SourceType(str, Enum):
     YOUTUBE = "youtube"
+    PDF = "pdf"
+    WEB_PAGE = "web_page"
 
 class Source(BaseModel):
     url: str
     type: SourceType
+    title: str = None
 
 @router.get("/")
 def get_sessions():
@@ -21,16 +21,12 @@ def get_sessions():
     return sessions
 
 @router.post("/")
-def create_session(sources: list[Source]):
-    for source in sources:
-        if source.type == SourceType.YOUTUBE:
-            video_id = get_yt_video_id(source.url)
-            session_id = session_service.create_new_session(video_id)
-            return {
-                "session_id": session_id
-            }
-            
-    raise ValueError("Invalid source type")
+def create_session(sources: list[Source]):        
+    session_id = session_service.create_new_session(sources)
+    
+    return {
+        "session_id": session_id
+    }
 
 @router.delete("/{session_id}")
 def delete_session(session_id: str):

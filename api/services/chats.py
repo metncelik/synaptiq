@@ -19,11 +19,17 @@ class ChatService:
         if not chat:
             raise HTTPException(status_code=400, detail="Failed to create chat")
         
-        if chat_type == "quiz":
-            response = message_service.generate_response(session_id, node_id, chat_type, "Generate a question")
-            message_service.add_message(chat["id"], "assistant", response)
-            
-        return chat
+        try:
+            if chat_type == "quiz":
+                response = message_service.generate_response(session_id, node_id, chat_type, "Generate a question")
+                message_service.add_message(chat["id"], "assistant", response)
+            return chat
+                
+        except Exception as e:
+            self.db_client.delete_chat(chat["id"])
+            raise e
+        
+    
     
     def get_chat(self, session_id, node_id, chat_type):
         chat = self.db_client.get_chat(session_id, node_id, chat_type)

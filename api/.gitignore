@@ -1,4 +1,6 @@
 .env
 **/__pycache__/
+.pytest_cache/
 **/.chroma/
 **/.sqlite/
+files

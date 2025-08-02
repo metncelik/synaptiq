@@ -1,15 +1,16 @@
 from database.client import db_client
-from langchain_google_genai import GoogleGenerativeAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from fastapi import HTTPException
 from utils import get_node_title_desc, parse_json
 from services.docs import docs_service
 from langchain.prompts import ChatPromptTemplate
+from langchain_core.tools import Tool
 
 
 class MessageService:
     def __init__(self):
         self.db_client = db_client
-        self.llm = GoogleGenerativeAI(model="gemini-1.5-flash-8b")
+        self.llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite")
         self.docs_service = docs_service
 
     def create_new_message(self, chat_id, content):
@@ -43,7 +44,7 @@ class MessageService:
             system_prompt = """
                  You are a helpful assistant that can generate a questions and evaluate user responses about the {topic} in this mindmap: {mindmap}. Do not generate unrelated questions just stay in the topic ({topic}). Here is the related information you need: {docs_str}
                  """
-
+        
         # TODO: change deepdive prompt & add web search tool (?)
         elif chat_type == "deepdive":
             system_prompt = """
@@ -75,7 +76,7 @@ class MessageService:
         print("prompt:", prompt)
         response = self.llm.invoke(prompt)
 
-        return response
+        return response.content
 
     def add_message(self, chat_id, role, content):
         message = self.db_client.insert_message(chat_id, role, content)

@@ -7,9 +7,17 @@ class SourceService:
         self.db_client = db_client
         self.docs_service = docs_service
         
-    def add_youtube_source(self, video_id, session_id):
-        yt_title = get_yt_title(video_id)
-        source_id = self.db_client.insert_source(yt_title, "youtube", session_id)
-        self.docs_service.add_youtube_docs(video_id, session_id, source_id)
+    def add_source(self, source, session_id):
+        if source.type == "youtube":
+            source.title = get_yt_title(source.url)
+        if source.type == "web_page":
+            source.title = source.url.split("//")[-1]
+        
+        source_id = self.db_client.insert_source(source.title, source.type, source.url, session_id)
+        self.docs_service.add_docs(source.url, source.type, session_id, source_id)
+
+    def get_sources(self, session_id):
+        sources = self.db_client.get_sources(session_id)
+        return sources
 
 source_service = SourceService()

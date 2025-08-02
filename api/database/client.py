@@ -1,8 +1,8 @@
 import sqlite3
 from pathlib import Path
 from contextlib import contextmanager
-SQLITE_DB_PATH = Path(__file__).parent / ".sqlite" / "database.db"
 
+SQLITE_DB_PATH = Path(__file__).parent / ".sqlite" / "database.db"
 
 class DatabaseClient:
     def __init__(self):
@@ -93,12 +93,42 @@ class DatabaseClient:
             cursor = conn.execute("SELECT * FROM chats WHERE id = ?", (chat_id,))
             chat = cursor.fetchone()
             return dict(chat) if chat else None
-            
-    def insert_source(self, source_title, source_type, session_id):
+        
+    def delete_chat(self, chat_id):
         with self.get_connection() as conn:
-            cursor = conn.execute("INSERT INTO sources (title, type, session_id) VALUES (?, ?, ?)", (source_title, source_type, session_id))
+            conn.execute("DELETE FROM chats WHERE id = ?", (chat_id,))
+            
+    def insert_source(self, source_title, source_type, url, session_id):
+        with self.get_connection() as conn:
+            cursor = conn.execute("INSERT INTO sources (title, type, url, session_id) VALUES (?, ?, ?, ?)", (source_title, source_type, url, session_id))
             conn.commit()
             return cursor.lastrowid
+
+    def get_sources(self, session_id):
+        with self.get_connection() as conn:
+            cursor = conn.execute("SELECT * FROM sources WHERE session_id = ?", (session_id,))
+            return [dict(row) for row in cursor.fetchall()]
+        
+    def insert_file(self, filename, original_filename, content_type, size):
+        with self.get_connection() as conn:
+            cursor = conn.execute("INSERT INTO files (filename, original_filename, content_type, size) VALUES (?, ?, ?, ?)", (filename, original_filename, content_type, size))
+            conn.commit()
+            return cursor.lastrowid
+    
+    def get_all_files(self):
+        with self.get_connection() as conn:
+            cursor = conn.execute("SELECT * FROM files ORDER BY created_at DESC")
+            return [dict(row) for row in cursor.fetchall()]
+        
+    def get_files(self, session_id):    
+        with self.get_connection() as conn:
+            cursor = conn.execute("SELECT * FROM files WHERE session_id = ?", (session_id,))
+            return [dict(row) for row in cursor.fetchall()]
+        
+    def delete_file(self, file_id):
+        with self.get_connection() as conn:
+            conn.execute("DELETE FROM files WHERE id = ?", (file_id,))
+            conn.commit()
 
     def insert_message(self, chat_id, role, content):
         with self.get_connection() as conn:

@@ -1,10 +1,10 @@
-import { useParams } from 'react-router'
+import { Link, useParams } from 'react-router'
 import { useGetSession } from '@/service/queries'
-import { FileText, Youtube } from 'lucide-react'
+import { ExternalLink, FileText, Globe, Youtube } from 'lucide-react'
 import { useState, useRef, useCallback } from 'react'
 import { type MindmapNode, type Mindmap, SourceType } from '@/service/types'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
-import { Badge } from '@/components/ui/badge'
+
 import { ChatDrawer } from './ChatDrawer'
 
 // Tree node with position information
@@ -375,17 +375,16 @@ function TreeMindmap({ mindmap, sessionId }: { mindmap: Mindmap, sessionId: stri
         [zoom, bounds, padding]
     )
 
-    // Recursively render the title list with indentation
     const renderNodeList = (node: TreeNode, depth = 0): React.ReactElement[] => {
         const items: React.ReactElement[] = []
         items.push(
             <div
                 key={node.id}
                 onClick={() => centerOnNode(node)}
-                className="cursor-pointer hover:bg-gray-100 px-2 py-1 text-sm text-gray-800"
-                style={{ paddingLeft: depth * 12 }}
+                className="cursor-pointer hover:bg-gray-100 px-6 py-1 text-sm text-gray-800"
+                style={{ paddingLeft: (depth + 1) * (depth + 1) * 6 }}
             >
-                - {node.title}
+                {">".repeat(depth)} {node.title}
             </div>
         )
         node.children.forEach(child => {
@@ -516,17 +515,6 @@ export function SessionView() {
         )
     }
 
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        })
-    }
-
     return (
         <div className="select-none h-full flex flex-col bg-gray-50">
             {/* Header */}
@@ -538,10 +526,25 @@ export function SessionView() {
 
                     <div className="flex flex-wrap gap-2 text-sm text-gray-600">
                         {session.sources.map((source) => (
-                            <Badge key={source.id} className="flex items-center gap-2 bg-gray-100 text-gray-900 px-2 py-1">
+                            <Link
+                                key={source.id}
+                                to={source.url}
+                                target="_blank"
+                                className="flex items-center gap-2 bg-gray-100 text-gray-900 px-2 py-1"
+                            >
                                 {source.type === SourceType.YOUTUBE && <Youtube className="h-4 w-4" />}
-                                <span>{source.title}</span>
-                            </Badge>
+                                {source.type === SourceType.PDF && <FileText className="h-4 w-4" />}
+                                {source.type === SourceType.WEB_PAGE && <Globe className="h-4 w-4" />}
+                                <Tooltip delayDuration={500}>
+                                    <TooltipTrigger asChild>
+                                        <span>{source.title.slice(0, 20)}...</span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="bottom" align="center">
+                                        <span>{source.title}</span>
+                                    </TooltipContent>
+                                </Tooltip>
+                                <ExternalLink className="h-3 w-3" />
+                            </Link>
                         ))}
                     </div>
                 </div>

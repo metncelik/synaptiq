@@ -1,12 +1,12 @@
 import axios  from 'axios'
-import type { Source, Session, FullSession, Chat, Message } from '@/service/types'
+import type { Session, FullSession, Chat, Message, FileItem, CreateSourceRequest } from '@/service/types'
 
 export const getSessions = async (): Promise<Session[]> => {
   const response = await axios.get(`${import.meta.env.VITE_API_URL}/sessions`)
   return response.data
 }
 
-export const createSession = async (sources: Source[]) => {
+export const createSession = async (sources: CreateSourceRequest[]) => {
   const response = await axios.post(`${import.meta.env.VITE_API_URL}/sessions`, sources)
   return response.data
 }
@@ -36,5 +36,27 @@ export const addMessage = async (chatId: string, content: string): Promise<Messa
     chat_id: chatId,
     content: content
   })
+  return response.data
+}
+
+export const getFiles = async (): Promise<FileItem[]> => {
+  const response = await axios.get(`${import.meta.env.VITE_API_URL}/files`)
+  return response.data
+}
+
+export const uploadFile = async (file: File): Promise<{ file_id: number }> => {
+  const formData = new FormData()
+  formData.append('file', file)
+  
+  const response = await axios.post(`${import.meta.env.VITE_API_URL}/files/upload`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+  return response.data
+}
+
+export const deleteFile = async (filename: string): Promise<{ message: string }> => {
+  const response = await axios.delete(`${import.meta.env.VITE_API_URL}/files/${filename}`)
   return response.data
 }

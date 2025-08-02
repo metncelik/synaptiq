@@ -1,4 +1,4 @@
-import { X, MessageCircle, HelpCircle, Search, ChevronLeft, ChevronRight, Loader2, ArrowUp, ArrowUpAZIcon, SendHorizonal, Send } from 'lucide-react'
+import { X, MessageCircle, HelpCircle, Search, ChevronLeft, ChevronRight, Loader2, SendHorizonal } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import React from 'react'
 import ReactMarkdown from 'react-markdown'
