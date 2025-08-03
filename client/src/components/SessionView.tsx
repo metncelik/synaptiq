@@ -193,7 +193,7 @@ function TreeNodeComponent({ node, onNodeClick }: { node: TreeNode, onNodeClick:
             <Tooltip>
                 <TooltipTrigger asChild>
                     <foreignObject width={node.width} height={node.height}>
-                        <div className="p-3 h-full flex flex-col relative ">
+                        <div className="p-3 h-full flex flex-col relative">
                             <h3 className="font-semibold text-sm text-gray-900 mb-1 line-clamp-2">
                                 {node.title}
                             </h3>
@@ -351,7 +351,7 @@ function TreeMindmap({ mindmap, sessionId }: { mindmap: Mindmap, sessionId: stri
         (targetNode: TreeNode) => {
             if (isAnimating) return // Prevent multiple animations
             
-            const targetZoom = 1.6
+            const targetZoom = 2.5
             const animationDuration = 500 // ms
             const startTime = Date.now()
             const startZoom = zoom
@@ -385,8 +385,8 @@ function TreeMindmap({ mindmap, sessionId }: { mindmap: Mindmap, sessionId: stri
                     y: startPan.y + (targetPan.y - startPan.y) * easedProgress,
                 }
 
-                setZoom(currentZoom)
                 setPan(currentPan)
+                setZoom(currentZoom)
 
                 if (progress < 1) {
                     requestAnimationFrame(animate)

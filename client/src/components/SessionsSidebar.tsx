@@ -60,7 +60,7 @@ export function SessionsSidebar() {
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-center gap-2">
             <Brain className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
-            <h1 className="text-xl font-semibold text-gray-900">Learn Loop</h1>
+            <h1 className="text-xl font-semibold text-gray-900">Synaptiq</h1>
           </div>
         </div>
 

@@ -16,7 +16,7 @@ from routes.messages import router as messages_router
 from routes.files import router as files_router
 
 app = FastAPI(
-    title="LearnLoop",
+    title="Synaptiq",
     description="An AI-powered learning assistant that enables interactive Q&A using mindmaps",
     version="1.0.0",
     docs_url="/docs",
@@ -63,7 +63,7 @@ async def general_exception_handler(request, exc):
 @app.get("/")
 async def root():
     return {
-        "title": "LearnLoop",
+        "title": "Synaptiq",
         "version": "1.0.0",
         "docs": "/docs",
     }

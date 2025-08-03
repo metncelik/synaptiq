@@ -40,12 +40,13 @@ class MessageService:
         return response
 
     def _invoke_llm(self, new_message, chat_type, topic, mindmap, docs_str, history, web_search):
+        # TODO: update prompt
         if chat_type == "quiz":
             system_prompt = """
                  You are a helpful assistant that can generate a questions and evaluate user responses about the {topic} in this mindmap: {mindmap}. Do not generate unrelated questions just stay in the topic ({topic}). Here is the related information you need: {docs_str}
                  """
         
-        # TODO: change deepdive prompt & add web search tool (?)
+        # TODO: add web search tool (?)
         elif chat_type == "deepdive":
             system_prompt = """
                  You are a helpful assistant that can generate a deepdive about the following text: {docs_str}
