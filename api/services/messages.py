@@ -4,15 +4,24 @@ from fastapi import HTTPException
 from utils import get_node_title_desc, parse_json
 from services.docs import docs_service
 from langchain.prompts import ChatPromptTemplate
-from langchain_core.tools import Tool
-
+from langchain_core.messages import ToolMessage
+from langchain_tavily import TavilySearch
 
 class MessageService:
     def __init__(self):
         self.db_client = db_client
-        self.llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite")
         self.docs_service = docs_service
+        self.llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite")
+        self.web_search_tool = TavilySearch(max_results=2)
 
+    def add_message(self, chat_id, role, content):
+        message = self.db_client.insert_message(chat_id, role, content)
+        return message
+
+    def get_messages(self, chat_id, desc=True):
+        messages = self.db_client.get_messages(chat_id, desc)
+        return messages
+    
     def create_new_message(self, chat_id, content):
         chat = self.db_client.get_chat_by_id(chat_id)
         if not chat:
@@ -25,7 +34,7 @@ class MessageService:
         self.add_message(chat_id, "user", content)
         self.add_message(chat_id, "assistant", response)
         return response
-
+    
     def generate_response(self, session_id, node_id, chat_type, content, history = None, web_search=False):
         mindmap = self.db_client.get_mindmap(session_id)
         mindmap_json = parse_json(mindmap["mindmap_json"]) if mindmap else None
@@ -34,9 +43,10 @@ class MessageService:
             node_title + " " + node_desc, session_id)
         docs_str = "\n".join([doc.page_content for doc in docs])
 
+        print("web_search:", web_search)
         response = self._invoke_llm(
             content, chat_type, node_title, mindmap_json, docs_str, history, web_search)
-
+        
         return response
 
     def _invoke_llm(self, new_message, chat_type, topic, mindmap, docs_str, history, web_search):
@@ -60,46 +70,48 @@ class MessageService:
         else:
             raise HTTPException(status_code=400, detail="Invalid chat type")
 
-        prompt_template = ChatPromptTemplate.from_messages([
-               ("system", system_prompt),
-               
-           ])
+        messages = [("system", system_prompt)]
         
         if history:
             for message in history:
-                prompt_template.append(("user", message["content"]))
+                messages.append((message["role"], message["content"]))
         
-        prompt_template.append(("user", new_message))
+        messages.append(("user", new_message))
+        
+        prompt_template = ChatPromptTemplate.from_messages(messages)
         
         prompt = prompt_template.invoke(
             {"docs_str": docs_str, "topic": topic, "mindmap": mindmap})
         
         # TODO: check if max tokens is reached
         
-        def web_search(query: str) -> str:
-            return "Web search tool is not implemented yet"
-        
+        # TODO: find a better way to handle web search
         if web_search:
-            self.llm.bind_tools([
-                Tool(
-                    name="web_search",
-                    description="Search the web for information",
-                    func=web_search
+            llm_with_tools = self.llm.bind_tools([self.web_search_tool])
+            ai_msg = llm_with_tools.invoke(prompt)
+
+            if not ai_msg.tool_calls:
+                return ai_msg.content
+
+            tool_messages = []
+            for tool_call in ai_msg.tool_calls:
+                tool_output = self.web_search_tool.invoke(tool_call["args"])
+                tool_messages.append(
+                    ToolMessage(content=str(tool_output), tool_call_id=tool_call["id"])
                 )
-            ])
-        
-        print("prompt:", prompt)
-        response = self.llm.invoke(prompt)
+                
+            print("tool_messages:", tool_messages)
 
+            messages = prompt.to_messages()
+            messages.append(ai_msg)
+            messages.extend(tool_messages)
+            
+            response = self.llm.invoke(messages)
+        else:
+            response = self.llm.invoke(prompt)
+            
         return response.content
-
-    def add_message(self, chat_id, role, content):
-        message = self.db_client.insert_message(chat_id, role, content)
-        return message
-
-    def get_messages(self, chat_id, desc=True):
-        messages = self.db_client.get_messages(chat_id, desc)
-        return messages
-
+ 
+    
 
 message_service = MessageService()

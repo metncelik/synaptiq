@@ -342,8 +342,7 @@ export function CreateSessionModal({ isOpen, onClose }: CreateSessionModalProps)
                                 >
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                                      <FileText className="h-4 w-4 text-gray-600 flex-shrink-0" />
-                                      <span className="text-sm text-gray-900 truncate">
+                                      <span className="pl-2 text-sm text-gray-900 truncate">
                                         {file.original_filename}
                                       </span>
                                       {isSelected && (
