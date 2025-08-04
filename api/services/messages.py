@@ -50,23 +50,52 @@ class MessageService:
         return response
 
     def _invoke_llm(self, new_message, chat_type, topic, mindmap, docs_str, history, web_search):
-        # TODO: update prompt
-        if chat_type == "quiz":
+        if chat_type == "normal":
             system_prompt = """
-                 You are a helpful assistant that can generate a questions and evaluate user responses about the {topic} in this mindmap: {mindmap}. Do not generate unrelated questions just stay in the topic ({topic}). Here is the related information you need: {docs_str}
-                 """
+You are a helpful assistant specializing in {topic}. Provide clear, accurate answers based on the mindmap context: {mindmap}
+
+Stay focused on {topic} and use the provided information: {docs_str}
+
+Guidelines:
+- Give concise, relevant answers
+- Reference specific details from the provided information
+- Avoid unrelated topics
+- If information is insufficient, acknowledge limitations clearly
+"""
+                 
+        elif chat_type == "quiz":
+            system_prompt = """
+You are an educational assistant that creates questions and evaluates responses about {topic} based on this mindmap: {mindmap}
+
+Use this information to generate relevant content: {docs_str}
+
+Guidelines:
+- Create clear, focused questions about {topic}
+- Provide constructive feedback on user responses
+- Vary question types (multiple choice, open-ended, scenario-based)
+- Stay within the topic scope
+- Give helpful explanations for correct answers
+"""
         
-        # TODO: add web search tool (?)
         elif chat_type == "deepdive":
             system_prompt = """
-                 You are a helpful assistant that can generate a deepdive about the following text: {docs_str}
-                 """
+You are an expert research assistant providing comprehensive deep-dive analysis. You have access to a web search tool that you should use when:
+- Current information is needed (recent developments, latest research, current events)
+- The provided documents lack sufficient detail on important aspects
+- Verification of facts or claims is required
+- Additional context would significantly enhance the analysis
 
-        elif chat_type == "normal":
-            system_prompt = """
-                 You are a helpful assistant. Answer questions about the {topic} in this mindmap: {mindmap}. Do not give unrelated information just stay in the topic ({topic}). Here is the related information you need: {docs_str}
-                 """
+Analyze the following information thoroughly: {docs_str}
 
+Guidelines:
+- Provide comprehensive, well-structured analysis
+- Use web search to supplement information when necessary
+- Cross-reference multiple sources for accuracy
+- Present both overview and detailed insights
+- Include recent developments and current context when relevant
+- Cite sources when using web search results
+"""
+                 
         else:
             raise HTTPException(status_code=400, detail="Invalid chat type")
 
